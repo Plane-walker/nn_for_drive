@@ -90,6 +90,13 @@ def train():
                         validation_split=0.1,
                         callbacks=[checkpoint, early_stopping])
 
+    # plt.plot(history.history['loss'], label='categorical_crossentropy(training data)')
+    # plt.title('loss for drive')
+    # plt.ylabel('categorical_crossentropy')
+    # plt.xlabel('No. epoch')
+    # plt.legend(loc="upper left")
+    # plt.savefig("loss_result.png")
+    # plt.show()
 
 def test():
     patch_h = 48
@@ -105,6 +112,7 @@ def test():
     model = model_from_json(model_json1)
     model.load_weights('best_weights.h5')
     predictions = model.predict(patches_images_test, batch_size=32, verbose=2)
+
     pred = np.empty((predictions.shape[0], 1, patch_h, patch_w))
     for i in range(predictions.shape[0]):
         for j in range(patch_h):
@@ -115,8 +123,8 @@ def test():
     image_w = test_images.shape[3]
     pred_images = restore_patches(pred, N_imgs, new_h, new_w, stride_h, stride_w)
     pred_images = pred_images[:, :, 0: image_h, 0: image_w]
-
     y_pred, y_true = clean_outside(pred_images, test_truths, test_masks)
+
     fpr, tpr, _ = roc_curve(y_true, y_pred)
     auc = roc_auc_score(y_true, y_pred)
     print(f'Area under the ROC curve: {auc}')
@@ -126,19 +134,26 @@ def test():
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.savefig("ROC_curve.png")
-    y_true = y_true.astype(np.int16)
-    for i in range(y_pred.shape[0]):
-        if y_pred[i] < 0.5:
-            y_pred[i] = 0
-        else:
-            y_pred[i] = 1
-    cm = confusion_matrix(y_true, y_pred)
+
+    y_true = y_true.astype(np.int16).reshape(y_true.shape[0])
+    y_pred = y_pred.reshape(y_pred.shape[0])
+
+    gather_idxs = np.argsort(y_pred)[-1::-1]
+    y_true1 = np.take_along_axis(y_true, gather_idxs, 0)
+    threshold = np.count_nonzero(y_true1)
+
+    y_pred1 = np.zeros(y_pred.shape)
+    y_pred1[:threshold] = 1
+
+    cm = confusion_matrix(y_true1, y_pred1)
     accuracy = (cm[0, 0] + cm[1, 1]) / sum(sum(cm))
     recall = cm[1, 1] / (cm[1, 1] + cm[1, 0])
     precision = cm[1, 1] / (cm[1, 1] + cm[0, 1])
     specificity = cm[0, 0] / (cm[0, 0] + cm[0, 1])
     f1 = 2 * cm[1, 1] / (2 * cm[1, 1] + cm[1, 0] + cm[0, 1])
 
+    threshold_y_pred = np.sort(y_pred)[-1::-1]
+    print('threshold:' + str(threshold_y_pred[threshold]))
     print(cm)
     print("accuracy: {:.4f}".format(accuracy))
     print("recall: {:.4f}".format(recall))
@@ -148,5 +163,5 @@ def test():
 
 
 if __name__ == '__main__':
-    train()
+    # train()
     test()
