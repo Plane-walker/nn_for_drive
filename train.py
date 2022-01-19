@@ -8,6 +8,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import confusion_matrix
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 
 
 def restore_patches(pred, N_imgs, img_h, img_w, stride_h, stride_w):
@@ -161,7 +162,19 @@ def test():
     print("specificity: {:.4f}".format(specificity))
     print("F1: {:.4f}".format(f1))
 
+    # Reshape the images for visualization
+    test_images = np.reshape(test_images, (N_imgs, image_h, image_w))
+    test_truths = np.reshape(test_truths, (N_imgs, image_h, image_w))
+    pred_images = np.reshape(pred_images, (N_imgs, image_h, image_w))
+
+    # Compare the original images, ground truth images and the segmentation results images
+    for i in range(N_imgs):
+        display_img = np.concatenate((test_images[i], test_truths[i], pred_images[i]), axis=1)
+        display_img = (display_img * 255).astype(np.uint8)
+        display_img = Image.fromarray(display_img)
+        display_img.save(str(i+1) + '.png')
+
 
 if __name__ == '__main__':
-    # train()
+    train()
     test()
