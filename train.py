@@ -52,11 +52,11 @@ def clean_outside(imgs, truth, masks):
 
 
 def train():
-    patches = 1000
+    patches = 1500
     patch_h = 48
     patch_w = 48
     patches_images_train, patches_masks_train = load_train_data_hdf5(patch_h, patch_w, patches)
-    epochs = 5
+    epochs = 20
     batch_size = 64
     lr = 0.1
     decay_rate = lr / epochs
@@ -66,7 +66,7 @@ def train():
                       depth=4,
                       inc_rate=2,
                       activation='relu',
-                      drop=0.2,
+                      drop=0.25,
                       batch_norm=True)
     model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
@@ -91,13 +91,13 @@ def train():
                         validation_split=0.1,
                         callbacks=[checkpoint, early_stopping])
 
-    # plt.plot(history.history['loss'], label='categorical_crossentropy(training data)')
-    # plt.title('loss for drive')
-    # plt.ylabel('categorical_crossentropy')
-    # plt.xlabel('No. epoch')
-    # plt.legend(loc="upper left")
-    # plt.savefig("loss_result.png")
-    # plt.show()
+    plt.plot(history.history['loss'], label='categorical_crossentropy(training data)')
+    plt.title('loss for drive')
+    plt.ylabel('categorical_crossentropy')
+    plt.xlabel('No. epoch')
+    plt.legend(loc="upper left")
+    plt.savefig("loss_result.png")
+    plt.show()
 
 def test():
     patch_h = 48
